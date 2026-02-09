@@ -21,7 +21,7 @@ Set either key in settings:
 
 ```json
 {
-  "pkm_path": "~/code/pkm-trent"
+  "pkm_path": "~/code/pkm"
 }
 ```
 
@@ -33,14 +33,14 @@ Project settings take precedence over global settings.
 From this folder:
 
 ```bash
-cd /Users/trentrobbins/code/pi-pkm-mode-extension
+cd /Users/user/code/pi-pkm-mode-extension
 pi -e ./extensions/pi-pkm-mode.ts
 ```
 
 Or by absolute extension path:
 
 ```bash
-pi -e /Users/trentrobbins/code/pi-pkm-mode-extension/extensions/pi-pkm-mode.ts
+pi -e /Users/user/code/pi-pkm-mode-extension/extensions/pi-pkm-mode.ts
 ```
 
 Then in pi:
