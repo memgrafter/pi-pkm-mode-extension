@@ -1,4 +1,4 @@
-# pi-pkm-mode
+# pi-pkm-mode-extension
 
 Personal knowledge management mode for **pi**.
 
