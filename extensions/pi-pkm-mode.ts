@@ -13,12 +13,8 @@
  *
  * Optional startup flags (after extension is loaded):
  *   --pkm
- *   --pkm-prompt-path ~/code/aiderx/aider/extensions/handlers/pkm_handler.py
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 
 const DEFAULT_PI_PKM_PROMPT = `You are an expert personal knowledge manager.
@@ -29,118 +25,10 @@ You can ask me questions to better understand where to save the information or h
 Focus on creating a well-organized and easy-to-navigate knowledge base.
 Do not write code unless I explicitly ask you to.`;
 
-const PKM_PROMPT_ASSIGNMENT_CANDIDATES = ["pkm_system", "main_system", "system_prompt", "system", "prompt"] as const;
-
-const TRIPLE_QUOTE_BLOCK_RE = /(?:[rRuUbBfF]{0,2})?("""[\s\S]*?"""|'''[\s\S]*?''')/;
-
-interface ResolvedPiPkmPrompt {
-	prompt: string;
-	source: string;
-}
-
 interface PkmModeState {
 	enabled: boolean;
 	prompt: string;
 	promptSource: string;
-}
-
-function escapeRegExp(value: string): string {
-	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function stripTripleQuotes(value: string): string {
-	if (value.startsWith('"""') && value.endsWith('"""')) {
-		return value.slice(3, -3);
-	}
-	if (value.startsWith("'''") && value.endsWith("'''")) {
-		return value.slice(3, -3);
-	}
-	return value;
-}
-
-function dedent(value: string): string {
-	const lines = value.replace(/\r\n/g, "\n").split("\n");
-
-	while (lines.length > 0 && lines[0]?.trim() === "") {
-		lines.shift();
-	}
-	while (lines.length > 0 && lines[lines.length - 1]?.trim() === "") {
-		lines.pop();
-	}
-
-	let minIndent = Number.POSITIVE_INFINITY;
-	for (const line of lines) {
-		if (line.trim() === "") continue;
-		const match = line.match(/^\s*/);
-		const indent = match?.[0].length ?? 0;
-		minIndent = Math.min(minIndent, indent);
-	}
-
-	if (!Number.isFinite(minIndent)) {
-		return "";
-	}
-
-	return lines
-		.map((line) => line.slice(minIndent))
-		.join("\n")
-		.trim();
-}
-
-function extractPiPkmPromptFromPython(content: string): string | undefined {
-	const assignmentAlternatives = PKM_PROMPT_ASSIGNMENT_CANDIDATES.map((name) => escapeRegExp(name)).join("|");
-	const assignmentRe = new RegExp(
-		`(?:^|\\n)\\s*(?:${assignmentAlternatives})\\s*=\\s*(?:[rRuUbBfF]{0,2})?(\"\"\"[\\s\\S]*?\"\"\"|'''[\\s\\S]*?''')`,
-	);
-
-	const assignmentMatch = content.match(assignmentRe);
-	if (assignmentMatch?.[1]) {
-		return dedent(stripTripleQuotes(assignmentMatch[1]));
-	}
-
-	const firstBlock = content.match(TRIPLE_QUOTE_BLOCK_RE);
-	if (firstBlock?.[1]) {
-		return dedent(stripTripleQuotes(firstBlock[1]));
-	}
-
-	return undefined;
-}
-
-function getDefaultPiPkmPromptPaths(): string[] {
-	const promptSourceRoot = join(homedir(), "code", "aiderx", "aider");
-	return [
-		join(promptSourceRoot, "extensions", "handlers", "pkm_handler.py"),
-		join(promptSourceRoot, "coders", "pkm_prompts.py"),
-		join(promptSourceRoot, "coders", "pkm_coder.py"),
-	];
-}
-
-function normalizePromptPath(path: string): string {
-	const trimmed = path.trim();
-	if (trimmed === "~") return homedir();
-	if (trimmed.startsWith("~/")) return join(homedir(), trimmed.slice(2));
-	if (trimmed.startsWith("~")) return join(homedir(), trimmed.slice(1));
-	return trimmed;
-}
-
-function resolvePiPkmPrompt(promptPaths: string[]): ResolvedPiPkmPrompt {
-	for (const path of promptPaths) {
-		const promptPath = normalizePromptPath(path);
-		if (!existsSync(promptPath)) {
-			continue;
-		}
-
-		try {
-			const content = readFileSync(promptPath, "utf-8");
-			const extractedPrompt = extractPiPkmPromptFromPython(content);
-			if (extractedPrompt && extractedPrompt.length > 0) {
-				return { prompt: extractedPrompt, source: promptPath };
-			}
-		} catch {
-			// Ignore and continue to fallback path(s)
-		}
-	}
-
-	return { prompt: DEFAULT_PI_PKM_PROMPT, source: "builtin-default" };
 }
 
 function parsePkmModeEntry(entries: ReturnType<ExtensionContext["sessionManager"]["getEntries"]>): boolean | undefined {
@@ -175,7 +63,7 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 	const state: PkmModeState = {
 		enabled: false,
 		prompt: DEFAULT_PI_PKM_PROMPT,
-		promptSource: "builtin-default",
+		promptSource: "embedded",
 	};
 
 	pi.registerFlag("pkm", {
@@ -183,21 +71,6 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 		type: "boolean",
 		default: false,
 	});
-
-	pi.registerFlag("pkm-prompt-path", {
-		description: "Path to PKM prompt python file",
-		type: "string",
-	});
-
-	const resolvePrompt = (): void => {
-		const customPathFlag = pi.getFlag("pkm-prompt-path");
-		const customPath =
-			typeof customPathFlag === "string" && customPathFlag.trim() ? customPathFlag.trim() : undefined;
-		const paths = customPath ? [customPath, ...getDefaultPiPkmPromptPaths()] : getDefaultPiPkmPromptPaths();
-		const resolved = resolvePiPkmPrompt(paths);
-		state.prompt = resolved.prompt;
-		state.promptSource = resolved.source;
-	};
 
 	const persistState = (): void => {
 		pi.appendEntry("pkm-mode", { enabled: state.enabled });
@@ -229,9 +102,8 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 				}
 				pi.sendUserMessage(args.trim());
 				return;
-			} else {
-				state.enabled = !state.enabled;
 			}
+			state.enabled = !state.enabled;
 
 			persistState();
 			updateStatus(ctx, state.enabled);
@@ -242,8 +114,6 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 	});
 
 	pi.on("session_start", async (_event, ctx) => {
-		resolvePrompt();
-
 		if (pi.getFlag("pkm") === true) {
 			state.enabled = true;
 		}

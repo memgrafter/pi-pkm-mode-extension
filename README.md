@@ -7,24 +7,8 @@ Personal knowledge management mode for **pi**.
 - `/pkm` toggle
 - `/pkm on|off|status`
 - `/pkm <text>` enables PKM mode and immediately sends `<text>`
-- Optional startup flags:
+- Optional startup flag:
   - `--pkm`
-  - `--pkm-prompt-path <path>`
-- Tries to load a PKM prompt from local Python prompt files, then falls back to built-in prompt text
-
-## Prompt source defaults
-
-By default it checks:
-
-- `~/code/aiderx/aider/extensions/handlers/pkm_handler.py`
-- `~/code/aiderx/aider/coders/pkm_prompts.py`
-- `~/code/aiderx/aider/coders/pkm_coder.py`
-
-Override with:
-
-```bash
---pkm-prompt-path /absolute/or/tilde/path/to/prompt_file.py
-```
 
 ## Local usage
 
