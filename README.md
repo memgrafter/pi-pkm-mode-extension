@@ -43,13 +43,13 @@ Then in pi:
 ## Install as a package
 
 ```bash
-pi install git:github.com/<you>/pi-pkm-mode
+pi install git:github.com/memgrafter/pi-pkm-mode
 # pinned
-pi install git:github.com/<you>/pi-pkm-mode@v0.1.0
+pi install git:github.com/memgrafter/pi-pkm-mode@v0.1.0
 ```
 
 Project-local install:
 
 ```bash
-pi install -l git:github.com/<you>/pi-pkm-mode
+pi install -l git:github.com/memgrafter/pi-pkm-mode
 ```
