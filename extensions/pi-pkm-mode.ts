@@ -15,6 +15,9 @@
  *   --pkm
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 
 const DEFAULT_PI_PKM_PROMPT = `You are an expert personal knowledge manager.
@@ -29,6 +32,7 @@ interface PkmModeState {
 	enabled: boolean;
 	prompt: string;
 	promptSource: string;
+	pkmPath: string | undefined;
 }
 
 function parsePkmModeEntry(entries: ReturnType<ExtensionContext["sessionManager"]["getEntries"]>): boolean | undefined {
@@ -52,6 +56,50 @@ function parsePkmModeEntry(entries: ReturnType<ExtensionContext["sessionManager"
 	return undefined;
 }
 
+function readJsonFile(path: string): unknown | undefined {
+	if (!existsSync(path)) {
+		return undefined;
+	}
+
+	try {
+		return JSON.parse(readFileSync(path, "utf-8"));
+	} catch {
+		return undefined;
+	}
+}
+
+function getPkmPathFromSettings(value: unknown): string | undefined {
+	if (!value || typeof value !== "object") {
+		return undefined;
+	}
+
+	const settings = value as Record<string, unknown>;
+	const raw =
+		typeof settings.pkm_path === "string"
+			? settings.pkm_path
+			: typeof settings.pkmPath === "string"
+				? settings.pkmPath
+				: undefined;
+	if (!raw) {
+		return undefined;
+	}
+
+	const trimmed = raw.trim();
+	return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function resolvePkmPathFromPiSettings(cwd: string): string | undefined {
+	const projectSettingsPath = join(cwd, ".pi", "settings.json");
+	const globalSettingsPath = join(homedir(), ".pi", "agent", "settings.json");
+
+	const projectPath = getPkmPathFromSettings(readJsonFile(projectSettingsPath));
+	if (projectPath) {
+		return projectPath;
+	}
+
+	return getPkmPathFromSettings(readJsonFile(globalSettingsPath));
+}
+
 function updateStatus(ctx: ExtensionContext, enabled: boolean): void {
 	if (!ctx.hasUI) {
 		return;
@@ -64,6 +112,7 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 		enabled: false,
 		prompt: DEFAULT_PI_PKM_PROMPT,
 		promptSource: "embedded",
+		pkmPath: undefined,
 	};
 
 	pi.registerFlag("pkm", {
@@ -74,6 +123,14 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 
 	const persistState = (): void => {
 		pi.appendEntry("pkm-mode", { enabled: state.enabled });
+	};
+
+	const refreshPkmPath = (cwd: string): void => {
+		state.pkmPath = resolvePkmPathFromPiSettings(cwd);
+	};
+
+	const clearPkmPath = (): void => {
+		state.pkmPath = undefined;
 	};
 
 	pi.registerCommand("pkm", {
@@ -89,26 +146,34 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 				return;
 			}
 
+			const wasEnabled = state.enabled;
+			let forwardedText: string | undefined;
+
 			if (normalized === "on" || normalized === "enable" || normalized === "enabled") {
 				state.enabled = true;
 			} else if (normalized === "off" || normalized === "disable" || normalized === "disabled") {
 				state.enabled = false;
 			} else if (normalized.length > 0) {
 				state.enabled = true;
-				persistState();
-				updateStatus(ctx, state.enabled);
-				if (ctx.hasUI) {
-					ctx.ui.notify(`pkm mode enabled (${state.promptSource})`, "info");
-				}
-				pi.sendUserMessage(args.trim());
-				return;
+				forwardedText = args.trim();
+			} else {
+				state.enabled = !state.enabled;
 			}
-			state.enabled = !state.enabled;
+
+			if (state.enabled && !wasEnabled) {
+				refreshPkmPath(ctx.cwd);
+			} else if (!state.enabled && wasEnabled) {
+				clearPkmPath();
+			}
 
 			persistState();
 			updateStatus(ctx, state.enabled);
 			if (ctx.hasUI) {
 				ctx.ui.notify(state.enabled ? `pkm mode enabled (${state.promptSource})` : "pkm mode disabled", "info");
+			}
+
+			if (forwardedText) {
+				pi.sendUserMessage(forwardedText);
 			}
 		},
 	});
@@ -123,6 +188,12 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 			state.enabled = persistedEnabled;
 		}
 
+		if (state.enabled) {
+			refreshPkmPath(ctx.cwd);
+		} else {
+			clearPkmPath();
+		}
+
 		updateStatus(ctx, state.enabled);
 	});
 
@@ -131,8 +202,10 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 			return undefined;
 		}
 
-		return {
-			systemPrompt: `${event.systemPrompt}\n\n${state.prompt}`,
-		};
+		const pkmPathContext = state.pkmPath
+			? `\n\nMy pkm is stored in ${state.pkmPath}. Read ${join(state.pkmPath, "AGENTS.md")}.`
+			: "";
+		const systemPrompt = `${event.systemPrompt}\n\n${state.prompt}${pkmPathContext}`;
+		return { systemPrompt };
 	});
 }

@@ -6,9 +6,27 @@ Personal knowledge management mode for **pi**.
 
 - `/pkm` toggle
 - `/pkm on|off|status`
-- `/pkm <text>` enables PKM mode and immediately sends `<text>`
+- `/pkm <text>` enables pkm mode and immediately sends `<text>`
 - Optional startup flag:
   - `--pkm`
+- If `pkm_path` (or `pkmPath`) is set in pi settings, pkm mode adds
+  `My pkm is stored in <path>` to the pkm system prompt
+
+## PKM path setting (optional)
+
+Set either key in settings:
+
+- Project: `.pi/settings.json`
+- Global: `~/.pi/agent/settings.json`
+
+```json
+{
+  "pkm_path": "~/code/pkm-trent"
+}
+```
+
+`pkm_path` takes precedence over `pkmPath` if both exist.
+Project settings take precedence over global settings.
 
 ## Local usage
 

@@ -1,7 +1,7 @@
 {
   "name": "pi-pkm-mode-extension",
   "version": "0.1.0",
-  "description": "PKM mode extension for pi",
+  "description": "pkm mode extension for pi",
   "type": "module",
   "keywords": ["pi-package", "pkm", "notes"],
   "files": ["extensions", "README.md"],
