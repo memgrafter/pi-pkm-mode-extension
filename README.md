@@ -15,7 +15,14 @@ Personal knowledge management mode for **pi**.
 From this folder:
 
 ```bash
+cd /Users/trentrobbins/code/pi-pkm-mode-extension
 pi -e ./extensions/pi-pkm-mode.ts
+```
+
+Or by absolute extension path:
+
+```bash
+pi -e /Users/trentrobbins/code/pi-pkm-mode-extension/extensions/pi-pkm-mode.ts
 ```
 
 Then in pi:
@@ -27,13 +34,13 @@ Then in pi:
 ## Install as a package
 
 ```bash
-pi install git:github.com/memgrafter/pi-pkm-mode
+pi install git:github.com/memgrafter/pi-pkm-mode-extension
 # pinned
-pi install git:github.com/memgrafter/pi-pkm-mode@v0.1.0
+pi install git:github.com/memgrafter/pi-pkm-mode-extension@v0.1.0
 ```
 
 Project-local install:
 
 ```bash
-pi install -l git:github.com/memgrafter/pi-pkm-mode
+pi install -l git:github.com/memgrafter/pi-pkm-mode-extension
 ```

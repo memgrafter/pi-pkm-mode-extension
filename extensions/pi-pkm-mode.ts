@@ -56,7 +56,7 @@ function updateStatus(ctx: ExtensionContext, enabled: boolean): void {
 	if (!ctx.hasUI) {
 		return;
 	}
-	ctx.ui.setStatus("pkm-mode", enabled ? ctx.ui.theme.fg("accent", "PKM") : undefined);
+	ctx.ui.setStatus("pkm-mode", enabled ? ctx.ui.theme.fg("accent", "pkm") : undefined);
 }
 
 export default function piPkmModeExtension(pi: ExtensionAPI): void {
@@ -67,7 +67,7 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 	};
 
 	pi.registerFlag("pkm", {
-		description: "Start in pi PKM mode",
+		description: "Start in pi pkm mode",
 		type: "boolean",
 		default: false,
 	});
@@ -77,13 +77,13 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 	};
 
 	pi.registerCommand("pkm", {
-		description: "Toggle pi PKM mode (or use: /pkm on|off|status)",
+		description: "Toggle pi pkm mode (or use: /pkm on|off|status)",
 		handler: async (args, ctx) => {
 			const normalized = args.trim().toLowerCase();
 
 			if (normalized === "status") {
 				if (ctx.hasUI) {
-					ctx.ui.notify(`PKM mode ${state.enabled ? "enabled" : "disabled"}. Prompt: ${state.promptSource}`);
+					ctx.ui.notify(`pkm mode ${state.enabled ? "enabled" : "disabled"}. Prompt: ${state.promptSource}`);
 				}
 				updateStatus(ctx, state.enabled);
 				return;
@@ -98,7 +98,7 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 				persistState();
 				updateStatus(ctx, state.enabled);
 				if (ctx.hasUI) {
-					ctx.ui.notify(`PKM mode enabled (${state.promptSource})`, "info");
+					ctx.ui.notify(`pkm mode enabled (${state.promptSource})`, "info");
 				}
 				pi.sendUserMessage(args.trim());
 				return;
@@ -108,7 +108,7 @@ export default function piPkmModeExtension(pi: ExtensionAPI): void {
 			persistState();
 			updateStatus(ctx, state.enabled);
 			if (ctx.hasUI) {
-				ctx.ui.notify(state.enabled ? `PKM mode enabled (${state.promptSource})` : "PKM mode disabled", "info");
+				ctx.ui.notify(state.enabled ? `pkm mode enabled (${state.promptSource})` : "pkm mode disabled", "info");
 			}
 		},
 	});
