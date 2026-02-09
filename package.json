@@ -1,0 +1,14 @@
+{
+  "name": "pi-pkm-mode",
+  "version": "0.1.0",
+  "description": "PKM mode extension for pi",
+  "type": "module",
+  "keywords": ["pi-package", "pkm", "notes"],
+  "files": ["extensions", "README.md"],
+  "pi": {
+    "extensions": ["./extensions"]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*"
+  }
+}
