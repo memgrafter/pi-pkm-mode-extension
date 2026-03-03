@@ -2,6 +2,14 @@
 
 Personal knowledge management mode for **pi**.
 
+## Quickstart
+1. Install pi: `npm install -g @mariozechner/pi-coding-agent`
+2. Install this extension: `pi install git:github.com/memgrafter/pi-pkm-mode-extension`
+3. Create your pkm folder: `mkdir -p ~/code/pkm` (or any directory you choose)
+4. Start pi with the extension: `pi -e /path/to/pi-pkm-mode-extension/extensions/pi-pkm-mode.ts`
+6. In pi, run `/pkm on` (or just `/pkm`).
+5. In pi, run: `Ask me my requirements and set up a personal knowledge management structure in ~/code/pkm.`
+
 ## Features
 
 - `/pkm` toggle
